@@ -2,6 +2,8 @@
 Runs webcam to debug system
 
 @author: SJohnson Jan 2021 UofGlasow
+
+PRESS Q to stop the image runnin
 """
 
 # import the opencv library 
@@ -9,7 +11,8 @@ import cv2
 
 
 # define a video capture object 
-vid = cv2.VideoCapture(0) 
+vid = cv2.VideoCapture(1)  # Set at 1 for the screen camera
+                            #Set as 0  for the overview camera
 
 while(True): 
 	
