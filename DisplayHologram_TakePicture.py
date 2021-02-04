@@ -17,10 +17,10 @@ img = Image.open(img_name)
 
 
 # %% Make a window and draw picture
-screen_size_X = 1024
-screen_size_Y = 768
+screen_size_X = 768
+screen_size_Y = 1024
 root = tk.Tk() # Create at TK window
-root.geometry("1024x768+1910+0") # SLM screen size: WVGA (1024x768)
+root.geometry("768x1024+1270+0") # SLM screen size: WVGA (1024x768)
 canvas = tk.Canvas(root, width=screen_size_X, height=screen_size_Y)
 canvas.pack()
 
@@ -29,14 +29,20 @@ img = ImageTk.PhotoImage(img)
 canvas.create_image(0, 0, anchor="nw", image=img)
 
 root.update() # Show plot in TK window
-time.sleep(1.0) # Display for small time 
-
 
 # %% Take an image with the webcam
-cam = cv2.VideoCapture(0)
-ret, frame = cam.read()
-timestamp = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
-cv2.imwrite('WebCamPic_'+timestamp+'.png', frame)
+cam = cv2.VideoCapture(1)
+while(True): 
+
+    ret, frame = cam.read()
+    cv2.imshow('frame', frame) 
+    	    
+    if cv2.waitKey(1) & 0xFF == ord('q'):     
+        timestamp = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+        cv2.imwrite('WebCamPic_'+timestamp+'.png', frame)
+        break
+
+cv2.destroyAllWindows() 
 cam.release()
     
 root.destroy() # Distroy TK window
