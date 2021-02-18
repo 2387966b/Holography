@@ -1,0 +1,154 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.cm as cm
+
+----
+
+def f_square(pattern):
+    
+    """Takes diffraction pattern and crops to a square."""
+    
+    sh = pattern.shape
+    
+    if sh[0] > sh[1]:
+        
+        exc = int((sh[0]-sh[1])/2)
+        pattern_sq = pattern[exc:-exc,:]
+    
+    if sh[1] > sh[0]:
+        
+        exc = int((sh[1]-sh[0])/2)
+        pattern_sq = pattern[:,exc:-exc]
+    
+    if sh[0] == sh[1]:
+        
+        pattern_sq = pattern
+        
+    return pattern_sq   
+
+----
+
+def f_phase(pattern):
+    
+    """Takes *square* diffraction pattern. The function then extracts the red values
+    of the RGB image, and then scales these values to between 0 and pi"""
+    
+    pattern_r = pattern[:,:,0]    # If image already has only 1 intensity value per
+                                  # pixel, then remove the array slice
+    
+    phase = np.pi*pattern_r/pattern_r.max()
+    
+    return phase
+
+----
+
+def f_gaussian(size, fwhm = 3, center=None):
+
+    """ Makes a square gaussian kernel.
+
+    size is the length of a side of the square
+
+    fwhm is full-width-half-maximum, which
+
+    can be thought of as an effective radius."""
+    
+    x = np.arange(0, size, 1, float)
+
+    y = x[:,np.newaxis]
+
+
+    if center is None:
+
+        x0 = y0 = size // 2
+
+    else:
+
+        x0 = center[0]
+
+        y0 = center[1]
+
+    gaussian = np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
+        
+    return gaussian
+
+----
+
+def f_field(gaussian, phase):
+    
+    """Takes input of a gaussian array and a phase array and constucts a field of 
+    the form Ae^(ip)"""
+    
+    s = phase.shape
+    
+    field = gaussian*np.e**(1j*phase)
+
+    return field
+
+----
+
+def f_ifft2(field):
+    
+    """Takes a field array, calculates the inverse fourier transform, then
+    centres the new array. The absolute value of the array is then taken 
+    to find the intensity image"""
+    
+    ift = np.fft.ifft2(field)
+    
+    ift_centred = np.fft.fftshift(ift)
+    
+    image = np.power(abs(ift_centred), 1)
+    
+    return image
+
+----
+
+def f_image_post(image,gamma):
+    
+    """Takes the image array and rescales it with a gamma adjustment so that 
+    the image is easier to view. A higher gamma value brightens the image, 
+    effectively reducing the contrast."""
+    
+    image_post = np.power(image/image.max(),1/gamma)
+    
+    return image_post
+
+----
+
+def f_focus_image(image_post, width):
+    
+    """Crops an array to a chosen radius from the centre."""
+    
+    finalshape = image_post.shape
+    
+    image_post_focus = image_post[(int(finalshape[0]/2)-width):int((finalshape[0]/2)+width),int((finalshape[1]/2)-width):int((finalshape[1]/2)+width)]
+    
+    return image_post_focus
+
+----
+
+pattern = plt.imread("grating.png") #### Input grating
+
+pattern_sq = f_square(pattern)
+
+phase = f_phase(pattern_sq)
+
+beamgaussian = f_gaussian(phase.shape[0],700) # Choose FWHM value roughly the size of the image
+                                              # to simulate the beamwidth filling the SLM
+
+field = f_field(beamgaussian, phase)
+
+image = f_ifft2(field)
+
+image_post = f_image_post(image,1) # Start with low gamma value
+
+image_post_focus = f_focus_image(image_post, 25) 
+
+
+fig = plt.figure(figsize=(20,20))
+
+ax1 = fig.add_subplot(2,2,1)
+ax1 = plt.imshow(pattern_sq)
+ax2 = fig.add_subplot(2,2,2)
+ax2 = plt.imshow(image_post, cmap=cm.hot)
+ax4 = fig.add_subplot(2,2,4)
+ax4 = plt.imshow(image_post_focus, cmap=cm.hot)
